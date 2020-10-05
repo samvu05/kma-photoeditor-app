@@ -40,8 +40,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private final String SAMPLE_CROPPED_IMG_NAME = "SampleCropImg";
 
     private boolean mPermissions;
-    private ImageButton btnCapHome;
-    private ImageButton btnLibHome;
+    private ImageView btnCapHome;
+    private ImageView btnLibHome;
     private ImageView imageView;
     private Uri mUri;
     private ContentValues values;
@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == CAMERA_REQUEST && resultCode == RESULT_OK) {
             Bitmap imageBitmap = (Bitmap) data.getExtras().get("data");
-            imageView.setImageBitmap(imageBitmap);
+//            imageView.setImageBitmap(imageBitmap);
             Uri imageUri = getImageUri(getApplicationContext(), imageBitmap);
             if (imageUri != null) {
                 startCrop(imageUri);
@@ -195,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private UCrop.Options getCropOptions() {
         UCrop.Options options = new UCrop.Options();
-        options.setCompressionQuality(70);
+        options.setCompressionQuality(80);
 
 //        options.setCompressionFormat(Bitmap.CompressFormat.JPEG);
 //        options.setCompressionFormat(Bitmap.CompressFormat.PNG);
@@ -205,9 +205,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         options.setFreeStyleCropEnabled(false);
 
         //Color
-        options.setStatusBarColor(getResources().getColor(R.color.colorPrimary));
-        options.setToolbarColor(getResources().getColor(R.color.colorPrimary));
-        options.setToolbarTitle("Recortar imagen");
+        options.setStatusBarColor(getResources().getColor(R.color.drarker_template));
+        options.setToolbarColor(getResources().getColor(R.color.drark_template));
+        options.setToolbarTitle("Crop & Rotate");
 
         return options;
     }

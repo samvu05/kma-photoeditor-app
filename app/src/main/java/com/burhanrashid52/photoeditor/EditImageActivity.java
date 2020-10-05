@@ -1,6 +1,8 @@
 package com.burhanrashid52.photoeditor;
 
 import android.Manifest;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -81,6 +83,9 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     private Sensor mAccelerometer;
     private ShakeDetector mShakeDetector;
 
+    private ImageView ivShakeGuide;
+    private ImageView ivUndoEffect;
+    private TextView tvShakeGuide;
 
     @Nullable
     @VisibleForTesting
@@ -121,6 +126,8 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         // added code
 
         Toolbar toolbar = (androidx.appcompat.widget.Toolbar) findViewById(R.id.home_toolbar);
+        toolbar.setTitle("E D I T O R");
+        toolbar.setTitleTextColor(getResources().getColor(R.color.text_dark_color));
         setSupportActionBar(toolbar);
 
         byte[] byteArray = getIntent().getByteArrayExtra("image");
@@ -135,6 +142,8 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
                 .getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mShakeDetector = new ShakeDetector();
         mShakeDetector.setOnShakeListener(this);
+
+        startGuideShake();
     }
 
     private void initViews() {
@@ -148,6 +157,10 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         mRvTools = findViewById(R.id.rvConstraintTools);
         mRvFilters = findViewById(R.id.rvFilterView);
         mRootView = findViewById(R.id.rootView);
+        ivShakeGuide = findViewById(R.id.iv_guide_rollback);
+        tvShakeGuide = findViewById(R.id.tv_guide_shake);
+        ivUndoEffect = findViewById(R.id.iv_undo_effect);
+        ivUndoEffect.setVisibility(View.GONE);
 
         imgUndo = findViewById(R.id.imgUndo);
         imgUndo.setOnClickListener(this);
@@ -185,14 +198,72 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     public void onShake() {
         mPhotoEditor.undo();
         ObjectAnimator animator = ObjectAnimator.ofFloat(mPhotoEditorView, View.ROTATION, -5f, 0f);
-        animator.setDuration(100);
+        animator.setRepeatCount(1);
+        animator.setDuration(150);
         animator.setRepeatMode(ObjectAnimator.RESTART);
         animator.start();
-        ObjectAnimator animator2 = ObjectAnimator.ofFloat(mPhotoEditorView, View.ROTATION, -2, 0f);
+        ObjectAnimator animator2 = ObjectAnimator.ofFloat(mPhotoEditorView, View.ROTATION, -2f
+                , 0f);
         animator2.setDuration(250);
         animator2.setRepeatMode(ObjectAnimator.RESTART);
         animator2.start();
 
+        ObjectAnimator animator3 = ObjectAnimator.ofFloat(ivUndoEffect, View.ALPHA, 0f);
+        animator3.setRepeatCount(2);
+        animator3.setDuration(1000);
+        animator3.setRepeatMode(ObjectAnimator.REVERSE);
+        animator3.start();
+        animator3.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+                ivUndoEffect.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                ivUndoEffect.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
+
+    }
+
+    private void startGuideShake() {
+        ObjectAnimator animator = ObjectAnimator.ofFloat(ivShakeGuide, View.ALPHA,0f);
+        animator.setRepeatCount(3);
+        animator.setDuration(1200);
+        animator.setRepeatMode(ObjectAnimator.REVERSE);
+        animator.start();
+        animator.addListener(new Animator.AnimatorListener() {
+            @Override
+            public void onAnimationStart(Animator animation) {
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                ivShakeGuide.setVisibility(View.GONE);
+                tvShakeGuide.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animation) {
+
+            }
+
+            @Override
+            public void onAnimationRepeat(Animator animation) {
+
+            }
+        });
     }
 
     @Override

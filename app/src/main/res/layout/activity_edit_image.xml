@@ -13,11 +13,10 @@
         style="@style/Theme.AppCompat.DayNight.DarkActionBar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/light_template"
         android:elevation="4dp"
         app:layout_constraintTop_toTopOf="parent"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        app:titleTextColor="@color/dark_color"></androidx.appcompat.widget.Toolbar>
+        app:titleTextColor="@color/text_dark_color"></androidx.appcompat.widget.Toolbar>
 
     <androidx.constraintlayout.widget.Guideline
         android:id="@+id/guideline"
@@ -30,12 +29,45 @@
         android:id="@+id/photoEditorView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_margin="8dp"
         android:background="#FFF"
         app:layout_constraintBottom_toTopOf="@+id/rvConstraintTools"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/home_toolbar" />
+
+    <ImageView
+        android:id="@+id/iv_undo_effect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:src="@drawable/mate_icon_undo"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"></ImageView>
+
+    <ImageView
+        android:id="@+id/iv_guide_rollback"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:animateLayoutChanges="true"
+        android:src="@drawable/mate_icon_rollback"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"></ImageView>
+
+    <TextView
+        android:id="@+id/tv_guide_shake"
+        android:layout_width="200dp"
+        android:layout_height="26dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/bg_text_guide"
+        android:gravity="center"
+        android:text="Shake Device to Undo/Redo"
+        android:textColor="@color/text_dark_color"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/iv_guide_rollback"></TextView>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvConstraintTools"
@@ -55,7 +87,6 @@
         android:id="@+id/rvFilterView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="@color/white_trans"
         android:orientation="horizontal"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="@+id/rvConstraintTools"
@@ -65,15 +96,17 @@
 
 
     <View
+        android:id="@+id/bottom_bg_view"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/light_template"
-        app:layout_constraintTop_toBottomOf="@id/rvConstraintTools"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent">
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rvConstraintTools">
 
     </View>
+
     <ImageView
         android:id="@+id/imgUndo"
         android:layout_width="@dimen/top_tool_icon_width"
@@ -108,6 +141,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/guideline" />
+
     <TextView
         android:id="@+id/txtCurrentTool"
         android:layout_width="wrap_content"
@@ -116,7 +150,7 @@
         android:layout_marginLeft="8dp"
         android:singleLine="true"
         android:text="@string/app_name"
-        android:textColor="@color/dark_color"
+        android:textColor="@color/text_dark_color"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
