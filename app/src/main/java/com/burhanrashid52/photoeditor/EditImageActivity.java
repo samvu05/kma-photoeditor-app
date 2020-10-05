@@ -82,15 +82,12 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     private SensorManager mSensorManager;
     private Sensor mAccelerometer;
     private ShakeDetector mShakeDetector;
-
     private ImageView ivShakeGuide;
     private ImageView ivUndoEffect;
     private TextView tvShakeGuide;
-
     @Nullable
     @VisibleForTesting
     Uri mSaveImageUri;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,7 +96,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         setContentView(R.layout.activity_edit_image);
 
         initViews();
-
         mPropertiesBSFragment = new PropertiesBSFragment();
         mEmojiBSFragment = new EmojiBSFragment();
         mStickerBSFragment = new StickerBSFragment();
@@ -123,8 +119,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
 
         // Set Image Dynamically
         // mPhotoEditorView.getSource().setImageResource(R.drawable.color_palette);
-        // added code
-
         Toolbar toolbar = (androidx.appcompat.widget.Toolbar) findViewById(R.id.home_toolbar);
         toolbar.setTitle("E D I T O R");
         toolbar.setTitleTextColor(getResources().getColor(R.color.text_dark_color));
@@ -151,7 +145,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         ImageView imgRedo;
         ImageView imgSave;
         ImageView imgClose;
-
         mPhotoEditorView = findViewById(R.id.photoEditorView);
         mTxtCurrentTool = findViewById(R.id.txtCurrentTool);
         mRvTools = findViewById(R.id.rvConstraintTools);
@@ -173,7 +166,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
 
         imgClose = findViewById(R.id.imgClose);
         imgClose.setOnClickListener(this);
-
     }
 
     @Override
@@ -186,6 +178,8 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             case R.id.btn_add_other_pic:
+                Intent intent = new Intent(this, MainActivity.class);
+                startActivity(intent);
                 break;
             case R.id.btn_share:
                 shareImage();
@@ -193,17 +187,18 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         }
         return super.onOptionsItemSelected(item);
     }
-    //temp comment to push
+
     @Override
     public void onShake() {
         mPhotoEditor.undo();
+
         ObjectAnimator animator = ObjectAnimator.ofFloat(mPhotoEditorView, View.ROTATION, -5f, 0f);
         animator.setRepeatCount(1);
         animator.setDuration(150);
         animator.setRepeatMode(ObjectAnimator.RESTART);
         animator.start();
-        ObjectAnimator animator2 = ObjectAnimator.ofFloat(mPhotoEditorView, View.ROTATION, -2f
-                , 0f);
+
+        ObjectAnimator animator2 = ObjectAnimator.ofFloat(mPhotoEditorView, View.ROTATION, -2f, 0f);
         animator2.setDuration(250);
         animator2.setRepeatMode(ObjectAnimator.RESTART);
         animator2.start();
@@ -238,7 +233,7 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     }
 
     private void startGuideShake() {
-        ObjectAnimator animator = ObjectAnimator.ofFloat(ivShakeGuide, View.ALPHA,0f);
+        ObjectAnimator animator = ObjectAnimator.ofFloat(ivShakeGuide, View.ALPHA, 0f);
         animator.setRepeatCount(3);
         animator.setDuration(1200);
         animator.setRepeatMode(ObjectAnimator.REVERSE);
@@ -297,7 +292,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
             public void onDone(String inputText, int colorCode) {
                 final TextStyleBuilder styleBuilder = new TextStyleBuilder();
                 styleBuilder.withTextColor(colorCode);
-
                 mPhotoEditor.editText(rootView, inputText, styleBuilder);
                 mTxtCurrentTool.setText(R.string.label_text);
             }
