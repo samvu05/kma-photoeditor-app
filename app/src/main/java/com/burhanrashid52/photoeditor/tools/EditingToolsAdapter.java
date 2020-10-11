@@ -3,6 +3,7 @@ package com.burhanrashid52.photoeditor.tools;
 import androidx.annotation.NonNull;
 import androidx.core.util.Pair;
 import androidx.recyclerview.widget.RecyclerView;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,6 +33,8 @@ public class EditingToolsAdapter extends RecyclerView.Adapter<EditingToolsAdapte
         mToolList.add(new ToolModel("Filter", R.drawable.mate_icon_filter, ToolType.FILTER));
         mToolList.add(new ToolModel("Emoji", R.drawable.mate_icon_emoji, ToolType.EMOJI));
         mToolList.add(new ToolModel("Sticker", R.drawable.mate_icon_sticker, ToolType.STICKER));
+        mToolList.add(new ToolModel("GPS Tag", R.drawable.mate_icon_geotag, ToolType.GPSTAG));
+        mToolList.add(new ToolModel("Owner", R.drawable.mate_icon_licence, ToolType.OWNER));
     }
 
     public interface OnItemSelected {

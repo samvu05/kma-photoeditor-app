@@ -224,7 +224,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         startActivity(in1);
     }
 
-
     /**
      * Check if this device has a camera
      */

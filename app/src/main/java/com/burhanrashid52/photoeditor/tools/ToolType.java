@@ -12,5 +12,7 @@ public enum ToolType {
     FILTER,
     EMOJI,
     STICKER,
-    ROTATE
+    ROTATE,
+    GPSTAG,
+    OWNER
 }

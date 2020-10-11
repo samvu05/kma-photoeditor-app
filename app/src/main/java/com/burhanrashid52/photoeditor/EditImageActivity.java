@@ -8,13 +8,19 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Typeface;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -29,11 +35,13 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -47,8 +55,10 @@ import com.burhanrashid52.photoeditor.shakedetector.ShakeDetector;
 import com.burhanrashid52.photoeditor.tools.EditingToolsAdapter;
 import com.burhanrashid52.photoeditor.tools.ToolType;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import ja.burhanrashid52.photoeditor.OnPhotoEditorListener;
 import ja.burhanrashid52.photoeditor.PhotoEditor;
@@ -62,7 +72,10 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         View.OnClickListener,
         PropertiesBSFragment.Properties,
         EmojiBSFragment.EmojiListener,
-        StickerBSFragment.StickerListener, EditingToolsAdapter.OnItemSelected, FilterListener, ShakeDetector.OnShakeLisenter {
+        StickerBSFragment.StickerListener,
+        EditingToolsAdapter.OnItemSelected,
+        FilterListener, ShakeDetector.OnShakeLisenter,
+        LocationListener {
 
     private static final String TAG = EditImageActivity.class.getSimpleName();
     public static final String FILE_PROVIDER_AUTHORITY = "com.burhanrashid52.photoeditor.fileprovider";
@@ -85,10 +98,23 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     private ImageView ivShakeGuide;
     private ImageView ivUndoEffect;
     private TextView tvShakeGuide;
+    private Location mLocation;
+    private Boolean isGeotag = false;
+    private int geoTagCount = 1;
+    protected LocationManager manager;
+    protected LocationListener locationListener;
+
+    private final String[] PERMISSION = {
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION
+    };
+
     @Nullable
     @VisibleForTesting
     Uri mSaveImageUri;
 
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -136,8 +162,43 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
                 .getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mShakeDetector = new ShakeDetector();
         mShakeDetector.setOnShakeListener(this);
-
         startGuideShake();
+//        if (checkPermission()){
+//            initLocation();
+//        }
+//
+    }
+
+    private void initLocation() {
+        manager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        if (manager != null) {
+
+            manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 1, this);
+            manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                    1, 1, this);
+        }
+    }
+
+    private boolean checkPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            for (String s : PERMISSION) {
+                if (ActivityCompat.checkSelfPermission(this, s) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(PERMISSION, 0);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (checkPermission()) {
+            initLocation();
+        } else {
+            isGeotag = false;
+        }
     }
 
     private void initViews() {
@@ -345,7 +406,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
             showSnackbar(getString(R.string.msg_save_image_to_share));
             return;
         }
-
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("image/*");
         intent.putExtra(Intent.EXTRA_STREAM, buildFileProviderUri(mSaveImageUri));
@@ -362,9 +422,9 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     private void saveImage() {
         if (requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
             showLoading("Saving...");
-            File file = new File(Environment.getExternalStorageDirectory()
+            final File file = new File(Environment.getExternalStorageDirectory()
                     + File.separator + ""
-                    + System.currentTimeMillis() + ".png");
+                    + System.currentTimeMillis() + ".jpeg");
             try {
                 file.createNewFile();
 
@@ -378,9 +438,32 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
                     @Override
                     public void onSuccess(@NonNull String imagePath) {
                         hideLoading();
-                        showSnackbar("Image Saved Successfully");
+                        ExifInterface exifInterface = null;
+                        try {
+                            exifInterface = new ExifInterface(imagePath);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        mLocation = new Location("myhome");
+                        mLocation.setLatitude(20.979677d);
+                        mLocation.setLongitude(105.795184d);
+                        if (mLocation != null && isGeotag) {
+                            exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE, dec2DMS(mLocation.getLatitude()));
+                            exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, mLocation.getLatitude() < 0 ? "S" : "N");
+                            exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, dec2DMS(mLocation.getLongitude()));
+                            exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, mLocation.getLongitude() < 0 ? "W" : "E");
+                            exifInterface.setAttribute(ExifInterface.TAG_ARTIST, "Samcoder");
+//                        exifInterface.setAttribute(ExifInterface.TAG_CONTRAST, "2");
+//                                exifInterface.setAttribute(ExifInterface.TAG_ORIENTATION,String.valueOf(ExifInterface.ORIENTATION_ROTATE_180));
+                            try {
+                                exifInterface.saveAttributes();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
                         mSaveImageUri = Uri.fromFile(new File(imagePath));
                         mPhotoEditorView.getSource().setImageURI(mSaveImageUri);
+                        showSnackbar("Image Saved Successfully");
                     }
 
                     @Override
@@ -395,6 +478,37 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
                 showSnackbar(e.getMessage());
             }
         }
+    }
+
+    private void tagWithLocation() {
+        geoTagCount += 1;
+        if (geoTagCount % 2 == 0) {
+            // if %2 == 0 geoTag enable else disable
+            showSnackbar("GPStag Enabled");
+            isGeotag = true;
+        } else {
+            showSnackbar("GPStag Disabled");
+            isGeotag = false;
+        }
+    }
+
+    //get true formart of Location
+    public String getLonGeoCoordinates(Location location) {
+
+        if (location == null) return "0/1,0/1,0/1000";
+        // You can adapt this to latitude very easily by passing location.getLatitude()
+        String[] degMinSec = Location.convert(location.getLongitude(), Location.FORMAT_SECONDS).split(":");
+        return degMinSec[0] + "/1," + degMinSec[1] + "/1," + degMinSec[2] + "/1000";
+    }
+
+    String dec2DMS(double coord) {
+        coord = coord > 0 ? coord : -coord;
+        String sOut = Integer.toString((int) coord) + "/1,";
+        coord = (coord % 1) * 60;
+        sOut = sOut + Integer.toString((int) coord) + "/1,";
+        coord = (coord % 1) * 60000;
+        sOut = sOut + Integer.toString((int) coord) + "/1000";
+        return sOut;
     }
 
     @Override
@@ -503,10 +617,13 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
             case ROTATE:
                 showSnackbar("ROTATE");
                 break;
+            case GPSTAG:
+                tagWithLocation();
+                break;
+            case OWNER:
+                break;
         }
     }
-
-
     void showFilter(boolean isVisible) {
         mIsFilterVisible = isVisible;
         mConstraintSet.clone(mRootView);
@@ -541,6 +658,26 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         } else {
             super.onBackPressed();
         }
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        this.mLocation = location;
+    }
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
     }
 
 }
