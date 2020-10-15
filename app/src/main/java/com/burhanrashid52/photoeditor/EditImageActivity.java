@@ -19,6 +19,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.ExifInterface;
+import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -463,6 +464,15 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
                         }
                         mSaveImageUri = Uri.fromFile(new File(imagePath));
                         mPhotoEditorView.getSource().setImageURI(mSaveImageUri);
+
+                        try {
+                            Intent scanFileIntent = new Intent(
+                                    Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file));
+                            sendBroadcast(scanFileIntent);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+
                         showSnackbar("Image Saved Successfully");
                     }
 
