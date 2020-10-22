@@ -171,11 +171,6 @@ class ImageFilterView extends GLSurfaceView implements GLSurfaceView.Renderer {
                     mEffect = effectFactory.createEffect(EFFECT_AUTOFIX);
                     mEffect.setParameter("scale", 0.5f);
                     break;
-                case BLACK_WHITE:
-                    mEffect = effectFactory.createEffect(EFFECT_BLACKWHITE);
-                    mEffect.setParameter("black", .1f);
-                    mEffect.setParameter("white", .7f);
-                    break;
                 case BRIGHTNESS:
                     mEffect = effectFactory.createEffect(EFFECT_BRIGHTNESS);
                     mEffect.setParameter("brightness", 2.0f);
@@ -203,14 +198,6 @@ class ImageFilterView extends GLSurfaceView implements GLSurfaceView.Renderer {
                     mEffect = effectFactory.createEffect(EFFECT_FISHEYE);
                     mEffect.setParameter("scale", .5f);
                     break;
-                case FLIP_HORIZONTAL:
-                    mEffect = effectFactory.createEffect(EFFECT_FLIP);
-                    mEffect.setParameter("horizontal", true);
-                    break;
-                case FLIP_VERTICAL:
-                    mEffect = effectFactory.createEffect(EFFECT_FLIP);
-                    mEffect.setParameter("vertical", true);
-                    break;
                 case GRAIN:
                     mEffect = effectFactory.createEffect(EFFECT_GRAIN);
                     mEffect.setParameter("strength", 1.0f);
@@ -228,10 +215,6 @@ class ImageFilterView extends GLSurfaceView implements GLSurfaceView.Renderer {
                     break;
                 case POSTERIZE:
                     mEffect = effectFactory.createEffect(EFFECT_POSTERIZE);
-                    break;
-                case ROTATE:
-                    mEffect = effectFactory.createEffect(EFFECT_ROTATE);
-                    mEffect.setParameter("angle", 180);
                     break;
                 case SATURATE:
                     mEffect = effectFactory.createEffect(EFFECT_SATURATE);

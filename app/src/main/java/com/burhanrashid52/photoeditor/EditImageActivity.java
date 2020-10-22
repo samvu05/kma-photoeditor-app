@@ -2,7 +2,6 @@ package com.burhanrashid52.photoeditor;
 
 import android.Manifest;
 import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -12,25 +11,23 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.graphics.Typeface;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
-import android.location.LocationManager;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
+import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.AnticipateOvershootInterpolator;
+import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -53,12 +50,15 @@ import com.burhanrashid52.photoeditor.filters.FilterListener;
 import com.burhanrashid52.photoeditor.filters.FilterViewAdapter;
 import com.burhanrashid52.photoeditor.shakedetector.ShakeDetector;
 import com.burhanrashid52.photoeditor.tools.EditingToolsAdapter;
+import com.burhanrashid52.photoeditor.shakedetector.ShakeOri;
 import com.burhanrashid52.photoeditor.tools.ToolType;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import ja.burhanrashid52.photoeditor.OnPhotoEditorListener;
 import ja.burhanrashid52.photoeditor.PhotoEditor;
@@ -99,15 +99,12 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     private ImageView ivUndoEffect;
     private TextView tvShakeGuide;
     private Location mLocation;
-    private Boolean isGeotag = false;
-    private int geoTagCount = 1;
-    protected LocationManager manager;
-    protected LocationListener locationListener;
+    private Boolean isGeoTag = false;
+    private FusedLocationProviderClient fusedLocationProviderClient;
 
-    private final String[] PERMISSION = {
-            Manifest.permission.ACCESS_COARSE_LOCATION,
-            Manifest.permission.ACCESS_FINE_LOCATION
-    };
+    private boolean isOwnerTag = false;
+    private String mOwner = "KMA Students";
+
 
     @Nullable
     @VisibleForTesting
@@ -163,42 +160,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         mShakeDetector = new ShakeDetector();
         mShakeDetector.setOnShakeListener(this);
         startGuideShake();
-//        if (checkPermission()){
-//            initLocation();
-//        }
-//
-    }
-
-    private void initLocation() {
-        manager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        if (manager != null) {
-
-            manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1, 1, this);
-            manager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                    1, 1, this);
-        }
-    }
-
-    private boolean checkPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            for (String s : PERMISSION) {
-                if (ActivityCompat.checkSelfPermission(this, s) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(PERMISSION, 0);
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (checkPermission()) {
-            initLocation();
-        } else {
-            isGeotag = false;
-        }
     }
 
     private void initViews() {
@@ -214,7 +175,7 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         ivShakeGuide = findViewById(R.id.iv_guide_rollback);
         tvShakeGuide = findViewById(R.id.tv_guide_shake);
         ivUndoEffect = findViewById(R.id.iv_undo_effect);
-        ivUndoEffect.setVisibility(View.GONE);
+        ivUndoEffect.setVisibility(View.INVISIBLE);
 
         imgUndo = findViewById(R.id.imgUndo);
         imgUndo.setOnClickListener(this);
@@ -227,6 +188,8 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
 
         imgClose = findViewById(R.id.imgClose);
         imgClose.setOnClickListener(this);
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
     }
 
     @Override
@@ -250,8 +213,16 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     }
 
     @Override
-    public void onShake() {
-        mPhotoEditor.undo();
+    public void onShake(ShakeOri ori) {
+        ivUndoEffect.setVisibility(View.VISIBLE);
+        switch (ori) {
+            case RIGHT:
+                mPhotoEditor.redo();
+                break;
+            case LEFT:
+                mPhotoEditor.undo();
+                break;
+        }
 
         ObjectAnimator animator = ObjectAnimator.ofFloat(mPhotoEditorView, View.ROTATION, -5f, 0f);
         animator.setRepeatCount(1);
@@ -272,7 +243,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         animator3.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(Animator animation) {
-                ivUndoEffect.setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -295,8 +265,8 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
 
     private void startGuideShake() {
         ObjectAnimator animator = ObjectAnimator.ofFloat(ivShakeGuide, View.ALPHA, 0f);
-        animator.setRepeatCount(3);
-        animator.setDuration(1200);
+        animator.setRepeatCount(2);
+        animator.setDuration(800);
         animator.setRepeatMode(ObjectAnimator.REVERSE);
         animator.start();
         animator.addListener(new Animator.AnimatorListener() {
@@ -308,6 +278,7 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
             public void onAnimationEnd(Animator animation) {
                 ivShakeGuide.setVisibility(View.GONE);
                 tvShakeGuide.setVisibility(View.GONE);
+
             }
 
             @Override
@@ -444,24 +415,28 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
                         } catch (IOException e) {
                             e.printStackTrace();
                         }
-                        mLocation = new Location("myhome");
-                        mLocation.setLatitude(20.979677d);
-                        mLocation.setLongitude(105.795184d);
-                        if (mLocation != null && isGeotag) {
+//                        mLocation = new Location("ACTVN");
+//                        mLocation.setLatitude(20.979677d);
+//                        mLocation.setLongitude(105.795184d);
+                        if (mLocation != null && isGeoTag) {
                             exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE, dec2DMS(mLocation.getLatitude()));
                             exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, mLocation.getLatitude() < 0 ? "S" : "N");
                             exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, dec2DMS(mLocation.getLongitude()));
                             exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, mLocation.getLongitude() < 0 ? "W" : "E");
-                            exifInterface.setAttribute(ExifInterface.TAG_ARTIST, "Samcoder");
 //                        exifInterface.setAttribute(ExifInterface.TAG_CONTRAST, "2");
-//                                exifInterface.setAttribute(ExifInterface.TAG_ORIENTATION,String.valueOf(ExifInterface.ORIENTATION_ROTATE_180));
+//                        exifInterface.setAttribute(ExifInterface.TAG_ORIENTATION,String.valueOf(ExifInterface.ORIENTATION_ROTATE_180));
                             try {
                                 exifInterface.saveAttributes();
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
                         }
-                        mSaveImageUri = Uri.fromFile(new File(imagePath));
+
+                        if (mOwner != null && isOwnerTag) {
+                            exifInterface.setAttribute(ExifInterface.TAG_ARTIST, mOwner);
+                        }
+                        mSaveImageUri
+                                = Uri.fromFile(new File(imagePath));
                         mPhotoEditorView.getSource().setImageURI(mSaveImageUri);
                         showSnackbar("Image Saved Successfully");
                     }
@@ -480,27 +455,104 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         }
     }
 
-    private void tagWithLocation() {
-        geoTagCount += 1;
-        if (geoTagCount % 2 == 0) {
-            // if %2 == 0 geoTag enable else disable
-            showSnackbar("GPStag Enabled");
-            isGeotag = true;
-        } else {
-            showSnackbar("GPStag Disabled");
-            isGeotag = false;
+
+    @Override
+    public void onToolSelected(ToolType toolType) {
+        switch (toolType) {
+            case BRUSH:
+                mPhotoEditor.setBrushDrawingMode(true);
+                mTxtCurrentTool.setText(R.string.label_brush);
+                mPropertiesBSFragment.show(getSupportFragmentManager(), mPropertiesBSFragment.getTag());
+                break;
+            case TEXT:
+                TextEditorDialogFragment textEditorDialogFragment = TextEditorDialogFragment.show(this);
+                textEditorDialogFragment.setOnTextEditorListener(new TextEditorDialogFragment.TextEditor() {
+                    @Override
+                    public void onDone(String inputText, int colorCode) {
+                        final TextStyleBuilder styleBuilder = new TextStyleBuilder();
+                        styleBuilder.withTextColor(colorCode);
+
+                        mPhotoEditor.addText(inputText, styleBuilder);
+                        mTxtCurrentTool.setText(R.string.label_text);
+                    }
+                });
+                break;
+            case ERASER:
+                mPhotoEditor.brushEraser();
+                mTxtCurrentTool.setText(R.string.label_eraser_mode);
+                break;
+            case FILTER:
+                mTxtCurrentTool.setText(R.string.label_filter);
+                showFilter(true);
+                break;
+            case EMOJI:
+                mEmojiBSFragment.show(getSupportFragmentManager(), mEmojiBSFragment.getTag());
+                break;
+            case STICKER:
+                mStickerBSFragment.show(getSupportFragmentManager(), mStickerBSFragment.getTag());
+                break;
+            case ROTATE:
+                showSnackbar("ROTATE");
+                break;
+            case GPSTAG:
+                tagWithLocation();
+                break;
+            case OWNER:
+                setOwnerTag();
+                break;
         }
     }
 
-    //get true formart of Location
-    public String getLonGeoCoordinates(Location location) {
-
-        if (location == null) return "0/1,0/1,0/1000";
-        // You can adapt this to latitude very easily by passing location.getLatitude()
-        String[] degMinSec = Location.convert(location.getLongitude(), Location.FORMAT_SECONDS).split(":");
-        return degMinSec[0] + "/1," + degMinSec[1] + "/1," + degMinSec[2] + "/1000";
+    @Override
+    public void onToolLongClick(ToolType toolType) {
+        switch (toolType) {
+            case OWNER:
+                showTypeOwnerDialog();
+                break;
+        }
     }
 
+    private void tagWithLocation() {
+        isGeoTag = reverseBoolean(isGeoTag);
+        if (isGeoTag) {
+            // if %2 == 0 geoTag enable else disable
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                //When permission granted
+                getLocation();
+
+            } else {
+                //When permission denied
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 44);
+                showSnackbar("Enable GPS to use this feature !");
+            }
+        } else {
+            showSnackbar("Location tag disabled !");
+            isGeoTag = false;
+            mEditingToolsAdapter.setLocationTagIcon(false);
+        }
+    }
+
+    private void getLocation() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        fusedLocationProviderClient.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
+            @Override
+            public void onComplete(@NonNull Task<Location> task) {
+                Location location = task.getResult();
+                if (location != null) {
+//                    tvShowLocation.setText("DONE");
+//                    tvShowLocation.setText(String.valueOf(location.getLatitude()));
+                    mLocation = location;
+                    isGeoTag = true;
+                    showSnackbar("Location tag enabled !");
+                    mEditingToolsAdapter.setLocationTagIcon(true);
+                }
+            }
+        });
+    }
+
+    //get true formart of Location
     String dec2DMS(double coord) {
         coord = coord > 0 ? coord : -coord;
         String sOut = Integer.toString((int) coord) + "/1,";
@@ -509,6 +561,41 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         coord = (coord % 1) * 60000;
         sOut = sOut + Integer.toString((int) coord) + "/1000";
         return sOut;
+    }
+
+    private void setOwnerTag() {
+        isOwnerTag = reverseBoolean(isOwnerTag);
+        mEditingToolsAdapter.setOwnerIcon(isOwnerTag);
+    }
+
+
+    public void showTypeOwnerDialog() {
+        AlertDialog.Builder myDialog = new AlertDialog.Builder(this);
+        myDialog.setTitle("Type your name ... ");
+
+        final EditText ownerInput = new EditText(this);
+        ownerInput.setInputType(InputType.TYPE_CLASS_TEXT);
+        myDialog.setView(ownerInput);
+
+        myDialog.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String result = ownerInput.getText().toString();
+                if (!result.equals("")) {
+                    mOwner = result;
+                    showSnackbar("Owner : " + mOwner);
+                }
+                // TO DO
+            }
+        });
+
+        myDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
+            }
+        });
+        myDialog.show();
     }
 
     @Override
@@ -579,51 +666,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         mPhotoEditor.setFilterEffect(photoFilter);
     }
 
-    @Override
-    public void onToolSelected(ToolType toolType) {
-        switch (toolType) {
-            case BRUSH:
-                mPhotoEditor.setBrushDrawingMode(true);
-                mTxtCurrentTool.setText(R.string.label_brush);
-                mPropertiesBSFragment.show(getSupportFragmentManager(), mPropertiesBSFragment.getTag());
-                break;
-            case TEXT:
-                TextEditorDialogFragment textEditorDialogFragment = TextEditorDialogFragment.show(this);
-                textEditorDialogFragment.setOnTextEditorListener(new TextEditorDialogFragment.TextEditor() {
-                    @Override
-                    public void onDone(String inputText, int colorCode) {
-                        final TextStyleBuilder styleBuilder = new TextStyleBuilder();
-                        styleBuilder.withTextColor(colorCode);
-
-                        mPhotoEditor.addText(inputText, styleBuilder);
-                        mTxtCurrentTool.setText(R.string.label_text);
-                    }
-                });
-                break;
-            case ERASER:
-                mPhotoEditor.brushEraser();
-                mTxtCurrentTool.setText(R.string.label_eraser_mode);
-                break;
-            case FILTER:
-                mTxtCurrentTool.setText(R.string.label_filter);
-                showFilter(true);
-                break;
-            case EMOJI:
-                mEmojiBSFragment.show(getSupportFragmentManager(), mEmojiBSFragment.getTag());
-                break;
-            case STICKER:
-                mStickerBSFragment.show(getSupportFragmentManager(), mStickerBSFragment.getTag());
-                break;
-            case ROTATE:
-                showSnackbar("ROTATE");
-                break;
-            case GPSTAG:
-                tagWithLocation();
-                break;
-            case OWNER:
-                break;
-        }
-    }
     void showFilter(boolean isVisible) {
         mIsFilterVisible = isVisible;
         mConstraintSet.clone(mRootView);

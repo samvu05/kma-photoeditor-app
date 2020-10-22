@@ -4,6 +4,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.util.Log;
 
 public class ShakeDetector implements SensorEventListener {
     private static final Float SHAKE_THRESHOLD_GRAVITY = 2F;
@@ -34,7 +35,15 @@ public class ShakeDetector implements SensorEventListener {
                 return;
             }
             mShakeTimestamp = now;
-            mListener.onShake();
+//            mListener.onShake();
+            if (Round(x, 4) > 10.0000) {
+                mListener.onShake(ShakeOri.RIGHT);
+                Log.d("sensor", "X Right axis: " + x);
+
+            } else if (Round(x, 4) < -10.0000) {
+                mListener.onShake(ShakeOri.LEFT);
+                Log.d("sensor", "X Left axis: " + x);
+            }
         }
     }
 
@@ -44,8 +53,16 @@ public class ShakeDetector implements SensorEventListener {
     }
 
     public interface OnShakeLisenter {
-        void onShake();
+        void onShake(ShakeOri ori);
     }
+
+    public static float Round(float Rval, int Rpl) {
+        float p = (float) Math.pow(10, Rpl);
+        Rval = Rval * p;
+        float tmp = Math.round(Rval);
+        return (float) tmp / p;
+    }
+
 }
 
 
