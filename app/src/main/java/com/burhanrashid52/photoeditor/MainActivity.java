@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -144,7 +145,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             Uri imageUri = data.getData();
             if (imageUri != null) {
                 startCrop(imageUri);
+
+                ExifInterface exifInterface = null;
+                try {
+                    exifInterface = new ExifInterface(getRealPathFromURI(imageUri));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                String temp = exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION);
+                String temp1 = exifInterface.getAttribute(ExifInterface.TAG_EXIF_VERSION);
+                String temp2 = exifInterface.getAttribute(ExifInterface.TAG_CONTRAST);
+                String temp3 = exifInterface.getAttribute(ExifInterface.TAG_RW2_ISO);
+                Log.d("TEST EXIF 0", temp);
+                Log.d("TEST EXIF 1", temp1);
+                Log.d("TEST EXIF 2", temp2);
+                Log.d("TEST EXIF 3", temp3);
+
             }
+
         } else if (requestCode == UCrop.REQUEST_CROP && resultCode == RESULT_OK) {
             showSnackBar("Da vao crop", Snackbar.LENGTH_SHORT);
             Uri imageUriResultCrop = UCrop.getOutput(data);

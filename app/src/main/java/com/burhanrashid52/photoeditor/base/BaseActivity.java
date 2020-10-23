@@ -2,11 +2,15 @@ package com.burhanrashid52.photoeditor.base;
 
 import android.app.ProgressDialog;
 import android.content.pm.PackageManager;
+
 import androidx.annotation.NonNull;
+
 import com.google.android.material.snackbar.Snackbar;
+
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -72,5 +76,9 @@ public class BaseActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    protected boolean reverseBoolean(Boolean origin) {
+        return !origin;
     }
 }
