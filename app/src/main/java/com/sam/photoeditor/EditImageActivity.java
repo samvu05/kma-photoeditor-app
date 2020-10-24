@@ -1,4 +1,4 @@
-package com.burhanrashid52.photoeditor;
+package com.sam.photoeditor;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -46,17 +46,19 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.transition.ChangeBounds;
 import androidx.transition.TransitionManager;
 
-import com.burhanrashid52.photoeditor.base.BaseActivity;
-import com.burhanrashid52.photoeditor.filters.FilterListener;
-import com.burhanrashid52.photoeditor.filters.FilterViewAdapter;
-import com.burhanrashid52.photoeditor.shakedetector.ShakeDetector;
-import com.burhanrashid52.photoeditor.tools.EditingToolsAdapter;
-import com.burhanrashid52.photoeditor.shakedetector.ShakeOri;
-import com.burhanrashid52.photoeditor.tools.ToolType;
+import com.sam.photoeditor.R;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.sam.photoeditor.base.BaseActivity;
+import com.sam.photoeditor.filters.FilterListener;
+import com.sam.photoeditor.filters.FilterViewAdapter;
+import com.sam.photoeditor.shakedetector.ShakeDetector;
+import com.sam.photoeditor.shakedetector.ShakeOri;
+import com.sam.photoeditor.tools.EditingToolsAdapter;
+import com.sam.photoeditor.tools.ToolType;
+import com.sam.photoeditor.utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -143,7 +145,7 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
 
         // Set Image Dynamically
         // mPhotoEditorView.getSource().setImageResource(R.drawable.color_palette);
-        Toolbar toolbar = (androidx.appcompat.widget.Toolbar) findViewById(R.id.home_toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.home_toolbar);
         toolbar.setTitle("E D I T O R");
         toolbar.setTitleTextColor(getResources().getColor(R.color.text_dark_color));
         setSupportActionBar(toolbar);
@@ -277,8 +279,8 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                ivShakeGuide.setVisibility(View.GONE);
                 tvShakeGuide.setVisibility(View.GONE);
+                ivShakeGuide.setVisibility(View.GONE);
 
             }
 
@@ -440,15 +442,8 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
                                 = Uri.fromFile(new File(imagePath));
                         mPhotoEditorView.getSource().setImageURI(mSaveImageUri);
 
-                        try {
-                            Intent scanFileIntent = new Intent(
-                                    Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file));
-                            sendBroadcast(scanFileIntent);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-
                         showSnackbar("Image Saved Successfully");
+                        Utils.scanFile(EditImageActivity.this, new File(imagePath));
                     }
 
                     @Override

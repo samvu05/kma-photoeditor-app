@@ -1,4 +1,4 @@
-package com.burhanrashid52.photoeditor.shakedetector;
+package com.sam.photoeditor.shakedetector;
 
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -8,7 +8,7 @@ import android.util.Log;
 
 public class ShakeDetector implements SensorEventListener {
     private static final Float SHAKE_THRESHOLD_GRAVITY = 2F;
-    private static final int SHAKE_SLOP_TIME_MS = 150;
+    private static final int SHAKE_SLOP_TIME_MS = 500;
     private OnShakeLisenter mListener;
     private long mShakeTimestamp = 0;
 

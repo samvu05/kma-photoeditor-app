@@ -1,8 +1,4 @@
-package com.burhanrashid52.photoeditor.tools;
-
-import androidx.annotation.NonNull;
-import androidx.core.util.Pair;
-import androidx.recyclerview.widget.RecyclerView;
+package com.sam.photoeditor.tools;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,7 +6,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.burhanrashid52.photoeditor.R;
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.sam.photoeditor.R;
 
 import java.util.ArrayList;
 import java.util.List;
