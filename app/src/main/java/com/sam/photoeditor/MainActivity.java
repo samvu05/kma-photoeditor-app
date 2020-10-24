@@ -1,4 +1,4 @@
-package com.burhanrashid52.photoeditor;
+package com.sam.photoeditor;
 
 import android.Manifest;
 import android.app.Activity;
@@ -8,23 +8,19 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
-import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.sam.photoeditor.R;
 import com.google.android.material.snackbar.Snackbar;
 import com.yalantis.ucrop.UCrop;
 
@@ -84,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void takePictureByCamera() {
         if (checkCameraHardware(this)) {
-            Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+            Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             startActivityForResult(cameraIntent, CAMERA_REQUEST);
         } else {
             showSnackBar("You need a camera to use this application", Snackbar.LENGTH_INDEFINITE);
@@ -102,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void verifyPermissions() {
         Log.d(TAG, "verifyPermissions: asking user for permissions.");
         String[] permissions = {
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
                 Manifest.permission.CAMERA};
         if (ContextCompat.checkSelfPermission(this,
                 permissions[0]) == PackageManager.PERMISSION_GRANTED
@@ -146,32 +142,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (imageUri != null) {
                 startCrop(imageUri);
 
-                ExifInterface exifInterface = null;
-                try {
-                    exifInterface = new ExifInterface(getRealPathFromURI(imageUri));
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                String temp = exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION);
-                String temp1 = exifInterface.getAttribute(ExifInterface.TAG_EXIF_VERSION);
-                String temp2 = exifInterface.getAttribute(ExifInterface.TAG_CONTRAST);
-                String temp3 = exifInterface.getAttribute(ExifInterface.TAG_RW2_ISO);
-                Log.d("TEST EXIF 0", temp);
-                Log.d("TEST EXIF 1", temp1);
-                Log.d("TEST EXIF 2", temp2);
-                Log.d("TEST EXIF 3", temp3);
+//                ExifInterface exifInterface = null;
+//                try {
+//                    exifInterface = new ExifInterface(getRealPathFromURI(imageUri));
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//
+//                String temp = exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION);
+//                String temp1 = exifInterface.getAttribute(ExifInterface.TAG_EXIF_VERSION);
+//                String temp2 = exifInterface.getAttribute(ExifInterface.TAG_CONTRAST);
+//                String temp3 = exifInterface.getAttribute(ExifInterface.TAG_RW2_ISO);
+//                Log.d("TEST EXIF 0", temp);
+//                Log.d("TEST EXIF 1", temp1);
+//                Log.d("TEST EXIF 2", temp2);
+//                Log.d("TEST EXIF 3", temp3);
 
             }
 
         } else if (requestCode == UCrop.REQUEST_CROP && resultCode == RESULT_OK) {
-            showSnackBar("Da vao crop", Snackbar.LENGTH_SHORT);
             Uri imageUriResultCrop = UCrop.getOutput(data);
             if (imageUriResultCrop != null) {
 //                imageView.setImageURI(imageUriResultCrop);
                 try {
                     Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUriResultCrop);
-                    imageView.setImageBitmap(bitmap);
                     openEditActivityAndSendData(bitmap, new EditImageActivity());
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -192,7 +186,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //Get image Uri from bitmap
     public Uri getImageUri(Context inContext, Bitmap inImage) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        inImage.compress(Bitmap.CompressFormat.PNG, 70, bytes);
+        inImage.compress(Bitmap.CompressFormat.PNG, 100, bytes);
         String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
         return Uri.parse(path);
     }

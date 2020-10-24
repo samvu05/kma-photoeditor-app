@@ -1,4 +1,4 @@
-package com.burhanrashid52.photoeditor.tools;
+package com.sam.photoeditor.tools;
 
 /**
  * @author <a href="https://github.com/burhanrashid52">Burhanuddin Rashid</a>
