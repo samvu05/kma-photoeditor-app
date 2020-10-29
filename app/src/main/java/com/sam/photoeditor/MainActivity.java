@@ -9,7 +9,10 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -27,12 +30,15 @@ import com.yalantis.ucrop.UCrop;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = "MainActivity";
     private static final int REQUEST_CODE = 1234;
     private static final int CAMERA_REQUEST = 53;
     private static final int PICK_REQUEST = 54;
+
+    public static final String SEND_CROPED_KEY = "KEY";
 
     private final String SAMPLE_CROPPED_IMG_NAME = "SampleCropImg";
 
@@ -77,9 +83,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void takePictureByCamera() {
+        if (Build.VERSION.SDK_INT >= 24) {
+            try {
+                Method m = StrictMode.class.getMethod("disableDeathOnFileUriExposure");
+                m.invoke(null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         if (checkCameraHardware(this)) {
             Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+            File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_PICTURES), "KMA Editor" + File.separator + "NonEdited");
+
+            try {
+                if (!mediaStorageDir.exists()) {
+                    if (!mediaStorageDir.mkdirs()) {
+                        return;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
+            mUri = Uri.fromFile(new File(mediaStorageDir.getPath() + File.separator + "pic_" + String.valueOf(System.currentTimeMillis()) + ".jpg"));
+            cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mUri);
             startActivityForResult(cameraIntent, CAMERA_REQUEST);
+
         } else {
             showSnackBar("You need a camera to use this application", Snackbar.LENGTH_INDEFINITE);
         }
@@ -97,11 +130,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Log.d(TAG, "verifyPermissions: asking user for permissions.");
         String[] permissions = {
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.CAMERA};
         if (ContextCompat.checkSelfPermission(this,
                 permissions[0]) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this,
-                permissions[1]) == PackageManager.PERMISSION_GRANTED) {
+                permissions[1]) == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this, permissions[2]) == PackageManager.PERMISSION_GRANTED) {
             mPermissions = true;
             init();
         } else {
@@ -129,24 +164,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == CAMERA_REQUEST && resultCode == RESULT_OK) {
-            Bitmap imageBitmap = (Bitmap) data.getExtras().get("data");
-//            imageView.setImageBitmap(imageBitmap);
-            Uri imageUri = getImageUri(getApplicationContext(), imageBitmap);
-            if (imageUri != null) {
-                startCrop(imageUri);
+//            Bitmap imageBitmap = (Bitmap) data.getExtras().get("data");
+//            Uri imageUri = getImageUri(getApplicationContext(), imageBitmap);
+//            if (imageUri != null) {
+//                startCrop(imageUri);
+//            }
+            if (mUri != null) {
+                startCrop(mUri);
             }
+
         } else if (requestCode == PICK_REQUEST && resultCode == RESULT_OK) {
             Uri imageUri = data.getData();
             if (imageUri != null) {
                 startCrop(imageUri);
-
 //                ExifInterface exifInterface = null;
 //                try {
 //                    exifInterface = new ExifInterface(getRealPathFromURI(imageUri));
 //                } catch (IOException e) {
 //                    e.printStackTrace();
 //                }
-//
+
 //                String temp = exifInterface.getAttribute(ExifInterface.TAG_ORIENTATION);
 //                String temp1 = exifInterface.getAttribute(ExifInterface.TAG_EXIF_VERSION);
 //                String temp2 = exifInterface.getAttribute(ExifInterface.TAG_CONTRAST);
@@ -155,19 +192,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                Log.d("TEST EXIF 1", temp1);
 //                Log.d("TEST EXIF 2", temp2);
 //                Log.d("TEST EXIF 3", temp3);
-
             }
 
         } else if (requestCode == UCrop.REQUEST_CROP && resultCode == RESULT_OK) {
             Uri imageUriResultCrop = UCrop.getOutput(data);
             if (imageUriResultCrop != null) {
-//                imageView.setImageURI(imageUriResultCrop);
-                try {
-                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUriResultCrop);
-                    openEditActivityAndSendData(bitmap, new EditImageActivity());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                // CACH 1
+//                try {
+//                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUriResultCrop);
+//                    openEditActivityAndSendData(bitmap, new EditImageActivity());
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+
+                // CACH 2
+                String uri_Str = imageUriResultCrop.toString();
+                Intent intent = new Intent(MainActivity.this, EditImageActivity.class);
+                intent.putExtra(SEND_CROPED_KEY, uri_Str);
+                startActivity(intent);
             }
         }
     }
@@ -189,6 +231,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return Uri.parse(path);
     }
 
+
     private void startCrop(Uri uri) {
         String destinationFileName = SAMPLE_CROPPED_IMG_NAME;
         destinationFileName += ".jpg";
@@ -199,14 +242,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //        uCrop.withAspectRatio(3,4);
         uCrop.useSourceImageAspectRatio();
 
-        uCrop.withMaxResultSize(450, 450);
+        uCrop.withMaxResultSize(2000, 2000);
         uCrop.withOptions(getCropOptions());
         uCrop.start(MainActivity.this);
     }
 
     private UCrop.Options getCropOptions() {
         UCrop.Options options = new UCrop.Options();
-        options.setCompressionQuality(80);
+        options.setCompressionQuality(100);
 
 //        options.setCompressionFormat(Bitmap.CompressFormat.JPEG);
 //        options.setCompressionFormat(Bitmap.CompressFormat.PNG);
@@ -216,8 +259,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         options.setFreeStyleCropEnabled(false);
 
         //Color
-        options.setStatusBarColor(getResources().getColor(R.color.drarker_template));
-        options.setToolbarColor(getResources().getColor(R.color.drark_template));
+        options.setStatusBarColor(getResources().getColor(R.color.black));
+        options.setToolbarColor(getResources().getColor(R.color.drarker_template));
+        options.setRootViewBackgroundColor(getResources().getColor(R.color.drarker_template));
+        options.setDimmedLayerColor(getResources().getColor(R.color.drark_template));
         options.setToolbarTitle("Crop & Rotate");
 
         return options;

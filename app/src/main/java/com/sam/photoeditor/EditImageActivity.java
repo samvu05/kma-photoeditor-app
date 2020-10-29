@@ -30,6 +30,7 @@ import android.view.animation.AnticipateOvershootInterpolator;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -52,6 +53,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.sam.photoeditor.base.BaseActivity;
+import com.sam.photoeditor.customtoast.CustomToast;
 import com.sam.photoeditor.filters.FilterListener;
 import com.sam.photoeditor.filters.FilterViewAdapter;
 import com.sam.photoeditor.shakedetector.ShakeDetector;
@@ -62,6 +64,7 @@ import com.sam.photoeditor.utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 
 import ja.burhanrashid52.photoeditor.OnPhotoEditorListener;
 import ja.burhanrashid52.photoeditor.PhotoEditor;
@@ -81,7 +84,7 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         LocationListener {
 
     private static final String TAG = EditImageActivity.class.getSimpleName();
-    public static final String FILE_PROVIDER_AUTHORITY = "com.burhanrashid52.photoeditor.fileprovider";
+    public static final String FILE_PROVIDER_AUTHORITY = "com.sam.photoeditor.fileprovider";
     PhotoEditor mPhotoEditor;
     private PhotoEditorView mPhotoEditorView;
     private PropertiesBSFragment mPropertiesBSFragment;
@@ -99,7 +102,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     private Sensor mAccelerometer;
     private ShakeDetector mShakeDetector;
     private ImageView ivShakeGuide;
-    private ImageView ivUndoEffect;
     private TextView tvShakeGuide;
     private Location mLocation;
     private Boolean isGeoTag = false;
@@ -150,12 +152,24 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         toolbar.setTitleTextColor(getResources().getColor(R.color.text_dark_color));
         setSupportActionBar(toolbar);
 
-        byte[] byteArray = getIntent().getByteArrayExtra("image");
-        Bitmap bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
-        if (mPhotoEditor != null) {
-            mPhotoEditor.clearAllViews();
+        //RECEIVE IMAGE URI FROM CROP ACTIVITY
+//        byte[] byteArray = getIntent().getByteArrayExtra("image");
+//        Bitmap bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.length);
+//        if (mPhotoEditor != null) {
+//            mPhotoEditor.clearAllViews();
+//        }
+//        mPhotoEditorView.getSource().setImageBitmap(bmp);
+
+        Bundle extras = getIntent().getExtras();
+        if (extras != null) {
+            String uri_Str = extras.getString(MainActivity.SEND_CROPED_KEY);
+            Uri uri = Uri.parse(uri_Str);
+            if (mPhotoEditor != null) {
+                mPhotoEditor.clearAllViews();
+            }
+            mPhotoEditorView.getSource().setImageURI(uri);
         }
-        mPhotoEditorView.getSource().setImageBitmap(bmp);
+
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mAccelerometer = mSensorManager
@@ -177,8 +191,6 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         mRootView = findViewById(R.id.rootView);
         ivShakeGuide = findViewById(R.id.iv_guide_rollback);
         tvShakeGuide = findViewById(R.id.tv_guide_shake);
-        ivUndoEffect = findViewById(R.id.iv_undo_effect);
-        ivUndoEffect.setVisibility(View.INVISIBLE);
 
         imgUndo = findViewById(R.id.imgUndo);
         imgUndo.setOnClickListener(this);
@@ -217,15 +229,17 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
 
     @Override
     public void onShake(ShakeOri ori) {
-        ivUndoEffect.setVisibility(View.VISIBLE);
         switch (ori) {
             case RIGHT:
+                CustomToast.makeText(this, "Redo", Toast.LENGTH_SHORT, ShakeOri.RIGHT).show();
                 mPhotoEditor.redo();
                 break;
             case LEFT:
+                CustomToast.makeText(this, "Undo", Toast.LENGTH_SHORT, ShakeOri.LEFT).show();
                 mPhotoEditor.undo();
                 break;
         }
+
 
         ObjectAnimator animator = ObjectAnimator.ofFloat(mPhotoEditorView, View.ROTATION, -5f, 0f);
         animator.setRepeatCount(1);
@@ -238,38 +252,12 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
         animator2.setRepeatMode(ObjectAnimator.RESTART);
         animator2.start();
 
-        ObjectAnimator animator3 = ObjectAnimator.ofFloat(ivUndoEffect, View.ALPHA, 0f);
-        animator3.setRepeatCount(2);
-        animator3.setDuration(1000);
-        animator3.setRepeatMode(ObjectAnimator.REVERSE);
-        animator3.start();
-        animator3.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                ivUndoEffect.setVisibility(View.GONE);
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-
-            }
-        });
-
     }
 
     private void startGuideShake() {
         ObjectAnimator animator = ObjectAnimator.ofFloat(ivShakeGuide, View.ALPHA, 0f);
         animator.setRepeatCount(2);
-        animator.setDuration(800);
+        animator.setDuration(700);
         animator.setRepeatMode(ObjectAnimator.REVERSE);
         animator.start();
         animator.addListener(new Animator.AnimatorListener() {
@@ -396,13 +384,14 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     private void saveImage() {
         if (requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
             showLoading("Saving...");
-            final File file = new File(Environment.getExternalStorageDirectory()
-                    + File.separator + ""
+            final File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                    + File.separator
                     + System.currentTimeMillis() + ".jpeg");
             try {
                 file.createNewFile();
 
                 SaveSettings saveSettings = new SaveSettings.Builder()
+                        .setCompressQuality(100)
                         .setClearViewsEnabled(true)
                         .setTransparencyEnabled(true)
                         .build();
@@ -538,7 +527,7 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
     }
 
     private void getLocation() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
         fusedLocationProviderClient.getLastLocation().addOnCompleteListener(new OnCompleteListener<Location>() {
@@ -576,7 +565,7 @@ public class EditImageActivity extends BaseActivity implements OnPhotoEditorList
 
     public void showTypeOwnerDialog() {
         AlertDialog.Builder myDialog = new AlertDialog.Builder(this);
-        myDialog.setTitle("Type your name ... ");
+        myDialog.setTitle("Your name : ");
 
         final EditText ownerInput = new EditText(this);
         ownerInput.setInputType(InputType.TYPE_CLASS_TEXT);

@@ -50,6 +50,9 @@ public class BaseActivity extends AppCompatActivity {
             case READ_WRITE_STORAGE:
                 isPermissionGranted(grantResults[0] == PackageManager.PERMISSION_GRANTED, permissions[0]);
                 break;
+            case 44:
+                isPermissionGranted(grantResults[1]==PackageManager.PERMISSION_GRANTED,permissions[1]);
+                break;
         }
     }
 

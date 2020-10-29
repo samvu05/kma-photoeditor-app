@@ -8,7 +8,7 @@ import android.util.Log;
 
 public class ShakeDetector implements SensorEventListener {
     private static final Float SHAKE_THRESHOLD_GRAVITY = 2F;
-    private static final int SHAKE_SLOP_TIME_MS = 500;
+    private static final int SHAKE_SLOP_TIME_MS = 1000;
     private OnShakeLisenter mListener;
     private long mShakeTimestamp = 0;
 
