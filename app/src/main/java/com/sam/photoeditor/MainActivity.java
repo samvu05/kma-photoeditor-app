@@ -37,9 +37,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private final String SAMPLE_CROPPED_IMG_NAME = "SampleCropImg";
 
     private boolean mPermissions;
-    private ImageView btnCapHome;
-    private ImageView btnLibHome;
-    private ImageView imageView;
+    private View btnCapHome;
+    private View btnLibHome;
     private Uri mUri;
     private ContentValues values;
 
@@ -51,9 +50,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void init() {
-        btnCapHome = findViewById(R.id.btn_cap_home);
-        btnLibHome = findViewById(R.id.btn_lib_home);
-        imageView = findViewById(R.id.iv_home);
+        btnCapHome = findViewById(R.id.view_camera);
+        btnLibHome = findViewById(R.id.view_edit_image);
 
         if (mPermissions) {
             btnCapHome.setOnClickListener(this);
@@ -67,10 +65,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
-            case R.id.btn_cap_home:
+            case R.id.view_camera:
                 takePictureByCamera();
                 break;
-            case R.id.btn_lib_home:
+            case R.id.view_edit_image:
                 takePictureByLibrary();
                 break;
             default:

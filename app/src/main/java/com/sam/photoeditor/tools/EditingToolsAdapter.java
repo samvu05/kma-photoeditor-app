@@ -14,11 +14,7 @@ import com.sam.photoeditor.R;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author <a href="https://github.com/burhanrashid52">Burhanuddin Rashid</a>
- * @version 0.1.2
- * @since 5/23/2018
- */
+
 public class EditingToolsAdapter extends RecyclerView.Adapter<EditingToolsAdapter.ViewHolder> {
 
     private List<ToolModel> mToolList = new ArrayList<>();
@@ -27,8 +23,8 @@ public class EditingToolsAdapter extends RecyclerView.Adapter<EditingToolsAdapte
     public EditingToolsAdapter(OnItemSelected onItemSelected) {
         mOnItemSelected = onItemSelected;
         mToolList.add(new ToolModel("Brush", R.drawable.mate_icon_brush, ToolType.BRUSH));
-        mToolList.add(new ToolModel("Text", R.drawable.mate_icon_text, ToolType.TEXT));
         mToolList.add(new ToolModel("Eraser", R.drawable.mate_icon_eraser, ToolType.ERASER));
+        mToolList.add(new ToolModel("Text", R.drawable.mate_icon_text, ToolType.TEXT));
         mToolList.add(new ToolModel("Filter", R.drawable.mate_icon_filter, ToolType.FILTER));
         mToolList.add(new ToolModel("Emoji", R.drawable.mate_icon_emoji, ToolType.EMOJI));
         mToolList.add(new ToolModel("Sticker", R.drawable.mate_icon_sticker, ToolType.STICKER));
